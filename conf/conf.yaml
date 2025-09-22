@@ -1,0 +1,5 @@
+defaults:
+  - _self_
+  - trainer: default
+random_seed: 42
+log_wandb: False
