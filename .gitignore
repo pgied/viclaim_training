@@ -208,4 +208,8 @@ __marimo__/
 
 /server_files/
 data/dataset/
+data/saved_model/
+models/
 outputs/
+logs/
+wandb/

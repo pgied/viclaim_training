@@ -4,6 +4,7 @@ import random
 import re
 from typing import List, Tuple
 import pandas as pd
+import torch
 
 
 # Clean sentences: drop NaN sentences; strip whitespace
@@ -16,11 +17,7 @@ def clean_sentence(s):
     return s if s != '' else None
 
 
-def load_and_filter_data(dataset_path, do_soft_labeling=False):
-    dataset = []
-    multi_label_count = 3
-    single_label_count = math.pow(2, multi_label_count)
-    
+def load_and_filter_data(dataset_path):    
     # Read CSV into DataFrame
     df = pd.read_csv(dataset_path)
     
@@ -29,13 +26,15 @@ def load_and_filter_data(dataset_path, do_soft_labeling=False):
     df = df.sort_values(['clip_id', 'row_index'])
     
     df['sentence_clean'] = df['sentence'].apply(clean_sentence)
+    df['sentence'] = df['sentence_clean'].fillna('').astype(str)
+    df = df.drop(columns=['sentence_clean'])
     
     # Group by clip_id and join sentences preserving order
     grouped_by_clip_df = (
-        df.dropna(subset=['sentence_clean'])
+        df.dropna(subset=['sentence'])
         .groupby('clip_id', sort=False)
         .agg(
-            fulltext = ('sentence_clean', lambda s: ' '.join(s.tolist())),
+            fulltext = ('sentence', lambda s: ' '.join(s.tolist())),
         )
         .reset_index()
     )
@@ -46,8 +45,7 @@ def load_and_filter_data(dataset_path, do_soft_labeling=False):
     clip_to_fulltext = dict(zip(grouped_by_clip_df['clip_id'], grouped_by_clip_df['fulltext']))
     df['fulltext'] = df['clip_id'].map(clip_to_fulltext)
     df['fulltext'] = df['fulltext'].fillna('')
-    
-            
+                
     return df
 
 
@@ -60,7 +58,7 @@ def create_stratified_train_test_split_df(
     topic_col: str = "topic",
     clip_col: str = "clip_id",
     sentence_id_col: str = "row_index",
-    random_seed: int | None = None,
+    random_seed: int = 42,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Stratified split by (language, topic). For each (lang, topic) group:
@@ -139,9 +137,7 @@ def create_stratified_train_test_split_df(
 def k_fold_cv_df(
     df: pd.DataFrame,
     n_folds: int = 5,
-    use_se_id: bool = False,
-    se_id_col: str = "se_id",
-    clip_col: str = "clip_id",
+    id_col: str = "row_index",
     lang_col: str = "language",
     topic_col: str = "topic",
     random_seed: int | None = None,
@@ -175,9 +171,6 @@ def k_fold_cv_df(
     grouped = df.groupby([lang_col, topic_col], sort=False)
 
     for (lang, topic), group_df in grouped:
-        # pick the id column for this grouping
-        id_col = se_id_col if use_se_id else clip_col
-
         # get unique IDs for this (lang, topic)
         ids = group_df[id_col].dropna().unique().tolist()
         if len(ids) == 0:
@@ -208,24 +201,32 @@ def k_fold_cv_df(
 
 
 def process_sentences(df: pd.DataFrame, use_full_context = True):
-    cids, se_ids, x, y = [], [], [], []
-    for sentence_item in sentences:
-        if use_full_context:
-            sentence_text = df.apply(lambda t: re.sub(r'\s+', ' ', t).strip())  sentence_item['sentence'] + " " + sentence_item['full_text']
-        else:
-            sentence_text = sentence_item['sentence']
-        labels = sentence_item['single_label']
-        if use_multi_label:
-            sentence_labels = sentence_item['multi_label']
-            labels = torch.tensor(sentence_labels, dtype=torch.float32)
-        cids.append(sentence_item['clip_id'])
-        se_ids.append(sentence_item['se_id'])
-        x.append(sentence_text)
-        y.append(labels)
+    # cids, se_ids, x, y = [], [], [], []
+    # for sentence_item in sentences:
+    #     if use_full_context:
+    #         sentence_text = df.apply(lambda t: t['sentence'] + " " + t['full_text'])
+    #     else:
+    #         sentence_text = sentence_item['sentence']
+    #     labels = sentence_item['single_label']
+    #     sentence_labels = sentence_item['multi_label']
+    #     labels = torch.tensor(sentence_labels, dtype=torch.float32)
+    #     cids.append(sentence_item['clip_id'])
+    #     se_ids.append(sentence_item['se_id'])
+    #     x.append(sentence_text)
+    #     y.append(labels)
         
     cids = df['clip_id'].tolist()
     row_index = df['row_index'].tolist()
-    row_index = df['row_index'].tolist()
-    row_index = df['row_index'].tolist()
+    if use_full_context:
+        x = (
+            (df['sentence'].fillna('') + ' ' + df['fulltext'].fillna(''))
+            .str.replace(r'\s+', ' ', regex=True)
+            .str.strip()
+            .tolist()
+        )
+    else:
+        x = df['sentence'].tolist()
+    cols = ["label_fcw", "label_fnc", "label_opn"]
+    y = [torch.tensor(row, dtype=torch.float32) for row in df[cols].fillna(0).to_numpy()]
         
     return cids, row_index, x, y

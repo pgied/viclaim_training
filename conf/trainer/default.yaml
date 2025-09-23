@@ -4,16 +4,11 @@ experiment_name: "baseline_v1_0"
 experiment_tag: ""
 eval_strategy: "steps"
 num_training_steps: 4000
-# num_train_epochs: 200
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 1
-# eval_batch_size: 1
-# eval_beam_size": 800
 gradient_accumulation_steps: 1
 gradient_checkpointing: False
 learning_rate: 2e-05
-# validation_freq: 20
-# checkpoint: null
 logging_steps: 10
 warmup_steps: 100
 logging_dir: "./logs/training"
@@ -21,22 +16,19 @@ eval_steps: 20
 save_steps: 20
 bf16: false
 fp16: true
-# use_8adam: false
-optim: "adamw_hf"
+optim: "adamw_torch"
 label_smoothing_factor: 0.0
-# log_wandb: false
-# env: "test"
-# saved_model_dir: "../saved_model/test"
+saved_model_dir: "./data/saved_model/"
 n_folds: 5
-# use_lora: false
-# tags_to_merge:
-#   - "fact"
-#   - "report"
-#   - "description"
-# tags_to_remove:
-#   - "threat"
-#   - "insult"
-do_soft_labeling: true
-# use_merged: true
-split_by_topic: false
+test_size: 0.01
+use_lora: false
+split_by_topic: true
 save_total_limit: 2
+use_full_context: true
+topic_list:
+  - "US Elections 2024"
+  - "War in Ukraine"
+  - "Migration"
+  - "Societal issues in the US."
+  - "European Union"
+  - "League of Legends"
