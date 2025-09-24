@@ -203,20 +203,6 @@ def k_fold_cv_df(
 
 
 def process_sentences(df: pd.DataFrame, use_full_context = True):
-    # cids, se_ids, x, y = [], [], [], []
-    # for sentence_item in sentences:
-    #     if use_full_context:
-    #         sentence_text = df.apply(lambda t: t['sentence'] + " " + t['full_text'])
-    #     else:
-    #         sentence_text = sentence_item['sentence']
-    #     labels = sentence_item['single_label']
-    #     sentence_labels = sentence_item['multi_label']
-    #     labels = torch.tensor(sentence_labels, dtype=torch.float32)
-    #     cids.append(sentence_item['clip_id'])
-    #     se_ids.append(sentence_item['se_id'])
-    #     x.append(sentence_text)
-    #     y.append(labels)
-        
     cids = df['clip_id'].tolist()
     row_index = df['row_index'].tolist()
     if use_full_context:
