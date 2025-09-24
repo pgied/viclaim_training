@@ -162,6 +162,7 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
     save_total_limit = cfg.trainer.get("save_total_limit", 2)
     label_smoothing_factor = cfg.trainer.get("label_smoothing_factor", 0.0)
     logging_dir = cfg.trainer.get("logging_dir", "")
+    wandb_dir = cfg.trainer.get("wandb_dir", "")
     n_folds = cfg.trainer.get("n_folds", 5)
     test_size = cfg.trainer.get("test_size", 0.15)
     use_full_context = cfg.trainer.get("use_full_context", True)
@@ -197,7 +198,9 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
     logging_path = os.path.join(logging_dir, experiment_name, experiment_tag)
     os.makedirs(logging_path, exist_ok=True)
 
-    model_path = os.path.join('models', experiment_name, experiment_tag)
+    model_path = os.path.join(saved_model_dir, 'models', experiment_name, experiment_tag)
+    prediction_output_path = os.path.join(saved_model_dir, 'prediction_output', experiment_name, experiment_tag)
+    best_model_path = os.path.join(saved_model_dir, 'best_model', experiment_name, experiment_tag)
 
     print(f'is cuda possible: {torch.cuda.is_available()}')  # Should print True
     print(f'is mps possible: {torch.mps.is_available()}')  # Should print True
@@ -229,6 +232,9 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
         ignore_data_skip=True,
         label_smoothing_factor=label_smoothing_factor
     )
+    pred_trainer_args = TrainingArguments(
+        output_dir=prediction_output_path,
+    )
     
     if split_by_topic:
         for selected_topic in topic_list:
@@ -245,7 +251,7 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
                 train_set_folds = [fold for _it, fold in sentence_for_topic.items() if _it != topic]
                 train_set = pd.concat(train_set_folds, ignore_index=True)
 
-                train_df, eval_df, _ = dataset_manager.create_stratified_train_test_split_df(train_set, test_size=0.0, eval_size=0.15, split_by_se_id=True, random_seed=random_seed)
+                train_df, eval_df, _ = dataset_manager.create_stratified_train_test_split_df(train_set, test_size=0.0, eval_size=test_size, split_by_se_id=True, random_seed=random_seed)
                 
                 clip_ids_train, se_ids_train, x_train, y_train = dataset_manager.process_sentences(train_df, use_full_context=use_full_context)
                 clip_ids_eval, se_ids_eval, x_eval, y_eval = dataset_manager.process_sentences(eval_df, use_full_context=use_full_context)
@@ -263,10 +269,16 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
                 print(f'experiment-tag is: {experiment_tag}')
 
                 if log_wandb:
-                    wandb.init(project="Hamison-SA-RUN-TOPIC", group=f'{experiment_name}/{experiment_tag}', name=f'{n_folds}-topic-{topic}')
+                    wandb.init(
+                        project="Hamison-SA-RUN-TOPIC", 
+                        group=f'{experiment_name}/{experiment_tag}', 
+                        name=f'{n_folds}-topic-{topic}',
+                        dir=wandb_dir
+                    )
 
                 pred_trainer = Trainer(
                     model=model,
+                    args=pred_trainer_args,
                     tokenizer=tokenizer,
                     data_collator=data_collator,
                     compute_metrics=None
@@ -287,7 +299,7 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
                         split_by_topic=split_by_topic,
                         pred_trainer=pred_trainer,
                         eval_step=eval_step,
-                        save_best_model_path=saved_model_dir
+                        save_best_model_path=best_model_path
                     ),
                     callbacks=[log_manager.LogToFileCallback(logging_path)]
                 )
@@ -298,7 +310,7 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
 
     else:
         # normal processing
-        train_df, _, test_set_df = dataset_manager.create_stratified_train_test_split_df(df_dataset, test_size=0.15, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
+        train_df, _, test_set_df = dataset_manager.create_stratified_train_test_split_df(df_dataset, test_size=test_size, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
     
         folds = dataset_manager.k_fold_cv_df(train_df, n_folds=n_folds)
         for idx in range(n_folds):
@@ -336,10 +348,16 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
             print(f'experiment-tag is: {experiment_tag}')
             
             if log_wandb:
-                wandb.init(project="Hamison_SA-SC-RUN", group=f'{experiment_name}/{experiment_tag}', name=f'{n_folds}-fold-{idx}')
+                wandb.init(
+                    project="Hamison_SA-SC-RUN", 
+                    group=f'{experiment_name}/{experiment_tag}', 
+                    name=f'{n_folds}-fold-{idx}',
+                    dir=wandb_dir
+                )
 
             pred_trainer = Trainer(
                 model=model,
+                args=pred_trainer_args,
                 tokenizer=tokenizer,
                 data_collator=data_collator,
                 compute_metrics=None
@@ -360,7 +378,7 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
                     split_by_topic=split_by_topic,
                     pred_trainer=pred_trainer,                
                     eval_step=eval_step,
-                    save_best_model_path=saved_model_dir
+                    save_best_model_path=best_model_path
                 ),
                 callbacks=[log_manager.LogToFileCallback(logging_path)]
             )

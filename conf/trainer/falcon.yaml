@@ -1,0 +1,35 @@
+hf_model: "tiiuae/falcon-7b"
+dataset_path: "/scratch/data/dataset/viclaim.csv"
+experiment_name: "baseline_v1_0"
+experiment_tag: "sa_sc"
+eval_strategy: "steps"
+num_training_steps: 500
+per_device_train_batch_size: 64
+per_device_eval_batch_size: 64
+gradient_accumulation_steps: 8
+gradient_checkpointing: false
+learning_rate: 5e-04
+logging_steps: 10
+warmup_steps: 100
+logging_dir: "/scratch/outputs/training_outputs/logs/training"
+wandb_dir: "/scratch/outputs/training_outputs/wandb/"
+eval_steps: 20
+save_steps: 20
+bf16: true
+fp16: false
+optim: "adamw_torch"
+label_smoothing_factor: 0.0
+saved_model_dir: "/scratch/outputs/training_outputs/saved_model/"
+n_folds: 5
+test_size: 0.15
+use_lora: true
+split_by_topic: false
+save_total_limit: 2
+use_full_context: true
+topic_list:
+  - "US Elections 2024"
+  - "War in Ukraine"
+  - "Migration"
+  - "Societal issues in the US."
+  - "European Union"
+  - "League of Legends"

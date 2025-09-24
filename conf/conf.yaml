@@ -1,5 +1,18 @@
 defaults:
   - _self_
-  - trainer: default
+  - trainer: llama3.2
+  # - trainer: default
+
+hydra:
+  # base directory where Hydra will place outputs for single runs
+  run:
+    dir: "./training_outputs/outputs/"
+  # where to put multirun/sweep outputs (optional)
+  sweep:
+    dir: "./training_outputs/multirun"
+  # If you don't want Hydra to change the current working directory:
+  job:
+    chdir: true # default is true; set to false to keep cwd
+
 random_seed: 42
 log_wandb: False

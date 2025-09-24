@@ -1,14 +1,16 @@
-hf_model: "FacebookAI/xlm-roberta-large"
+hf_model: "meta-llama/Llama-3.2-3B"
 dataset_path: "../../data/dataset/viclaim.csv"
 experiment_name: "baseline_v1_0"
 experiment_tag: ""
 eval_strategy: "steps"
-num_training_steps: 4000
+num_training_steps: 500
 per_device_train_batch_size: 1
+# per_device_train_batch_size: 64
 per_device_eval_batch_size: 1
-gradient_accumulation_steps: 1
+# per_device_eval_batch_size: 64
+gradient_accumulation_steps: 8
 gradient_checkpointing: False
-learning_rate: 2e-05
+learning_rate: 5e-04
 logging_steps: 10
 warmup_steps: 100
 logging_dir: "../../training_outputs/logs/"
@@ -21,8 +23,8 @@ optim: "adamw_torch"
 label_smoothing_factor: 0.0
 saved_model_dir: "../../training_outputs/saved_model/"
 n_folds: 5
-test_size: 0.01
-use_lora: false
+test_size: 0.15
+use_lora: true
 split_by_topic: true
 save_total_limit: 2
 use_full_context: true

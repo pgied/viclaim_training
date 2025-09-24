@@ -211,5 +211,7 @@ data/dataset/
 data/saved_model/
 models/
 outputs/
+training_outputs/
 logs/
 wandb/
+tmp_trainer/

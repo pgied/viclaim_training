@@ -1,5 +1,6 @@
 
 import math
+import os
 import random
 import re
 from typing import List, Tuple
@@ -18,6 +19,7 @@ def clean_sentence(s):
 
 
 def load_and_filter_data(dataset_path):    
+    print("PWD:", os.getcwd())
     # Read CSV into DataFrame
     df = pd.read_csv(dataset_path)
     
