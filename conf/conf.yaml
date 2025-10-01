@@ -1,7 +1,8 @@
 defaults:
   - _self_
-  - trainer: llama3.2
-  # - trainer: default
+  # - trainer: llama3.2
+  - trainer: default
+  - data: default
 
 hydra:
   # base directory where Hydra will place outputs for single runs

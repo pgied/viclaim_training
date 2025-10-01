@@ -1,5 +1,4 @@
 hf_model: "meta-llama/Llama-3.2-3B"
-dataset_path: "../../data/dataset/viclaim.csv"
 experiment_name: "baseline_v1_0"
 experiment_tag: ""
 eval_strategy: "steps"

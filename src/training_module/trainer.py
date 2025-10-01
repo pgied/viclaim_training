@@ -141,7 +141,6 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
     
     # trainer config
     hf_model = cfg.trainer.get("hf_model", "")
-    dataset_path = cfg.trainer.get("dataset_path", "")
     split_by_topic = cfg.trainer.get("split_by_topic", False)
     experiment_tag = cfg.trainer.get("experiment_tag", False)
     experiment_name = cfg.trainer.get("experiment_name", False)
@@ -170,6 +169,11 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
     saved_model_dir = cfg.trainer.get("saved_model_dir", "")
     topic_list = cfg.trainer.get("topic_list", [])
 
+    # data config    
+    dataset_path = cfg.data.get("dataset_path", "")
+    use_custom_test_set = cfg.data.get("use_custom_test_set", False)
+    test_dataset_path = cfg.data.get("test_dataset_path", "")
+
     num_labels = 3
 
     # Log in using the token
@@ -187,7 +191,10 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
     experiment_tag = f"{expermient_tag_hf_model}_{is_split_by_topic_text}_{experiment_tag}" 
 
     # load data
+    df_test = pd.DataFrame([])
     df_dataset = dataset_manager.load_and_filter_data(dataset_path=dataset_path)
+    if use_custom_test_set and not split_by_topic:
+        df_test = dataset_manager.load_and_filter_data(dataset_path=test_dataset_path)
 
     tokenizer = AutoTokenizer.from_pretrained(hf_model)
     if tokenizer.pad_token is None:
@@ -310,7 +317,13 @@ def run_sequence_classification_trainig_eval_test(cfg: DictConfig):
 
     else:
         # normal processing
-        train_df, _, test_set_df = dataset_manager.create_stratified_train_test_split_df(df_dataset, test_size=test_size, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
+        if use_custom_test_set:
+            print("using custom train set")
+            train_df, _, _ = dataset_manager.create_stratified_train_test_split_df(df_dataset, test_size=0.0, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
+            _, _, test_set_df = dataset_manager.create_stratified_train_test_split_df(df_test, test_size=1.0, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
+        else:
+            print("splitting test, eval, train")
+            train_df, _, test_set_df = dataset_manager.create_stratified_train_test_split_df(df_dataset, test_size=test_size, eval_size=0.0, split_by_se_id=True, random_seed=random_seed)
     
         folds = dataset_manager.k_fold_cv_df(train_df, n_folds=n_folds)
         for idx in range(n_folds):

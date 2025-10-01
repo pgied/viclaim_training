@@ -1,5 +1,4 @@
 hf_model: "FacebookAI/xlm-roberta-large"
-dataset_path: "../../data/dataset/viclaim.csv"
 experiment_name: "baseline_v1_0"
 experiment_tag: ""
 eval_strategy: "steps"
@@ -23,7 +22,7 @@ saved_model_dir: "../../training_outputs/saved_model/"
 n_folds: 5
 test_size: 0.01
 use_lora: false
-split_by_topic: true
+split_by_topic: false
 save_total_limit: 2
 use_full_context: true
 topic_list:

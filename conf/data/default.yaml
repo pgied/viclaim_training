@@ -1,0 +1,4 @@
+dataset_path: "../../data/dataset/viclaim_train.csv"
+# dataset_path: "../../data/dataset/viclaim.csv"
+use_custom_test_set: true
+test_dataset_path: "../../data/dataset/viclaim_test.csv"
